@@ -54,6 +54,7 @@
 //   console.log(`Server running on port ${PORT}`);
 // });
 
+
 import express from 'express';
 import cors from 'cors';
 import { clerkClient } from '@clerk/clerk-sdk-node';
@@ -69,30 +70,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000; // ✅ Correction de l'erreur PORT is not defined
+const PORT = process.env.PORT || 5000;
 
 app.get('/api/users', async (req, res) => {
   try {
     let allUsers = [];
     let offset = 0;
-    const limit = 100; // ✅ Maximum autorisé par Clerk
+    const limit = 100;
     let hasMore = true;
 
     while (hasMore) {
       const response = await clerkClient.users.getUserList({ limit, offset });
-      
-      if (!response || response.length === 0) break; // ✅ Sécurité en cas de réponse vide
 
-      allUsers = [...allUsers, ...response];
+      if (!response || !response.data || response.data.length === 0) break; // ✅ Sécurisation
 
-      // ✅ Vérifier s'il reste des utilisateurs à récupérer
-      hasMore = response.length === limit;
+      allUsers = [...allUsers, ...response.data]; // ✅ Utilisation de `response.data`
+
+      hasMore = response.data.length === limit; // ✅ Vérification correcte
       offset += limit;
     }
 
     res.json({ data: allUsers });
   } catch (error) {
-    console.error('Error fetching users:', error); // ✅ Loguer l'erreur pour debug
+    console.error('Error fetching users:', error);
     res.status(500).json({ error: error.message });
   }
 });
